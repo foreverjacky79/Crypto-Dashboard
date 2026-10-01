@@ -339,6 +339,22 @@
   /* ============================================================
      STATE
   ============================================================ */
+  // GitHub Pages does not provide the host-specific `window.storage` API used by
+  // some embedded previews. Keep personal settings in the browser instead, with
+  // a compatible async interface so the dashboard works both locally and on Pages.
+  const storage = (() => {
+    const prefix = "ticker-dashboard:";
+    return {
+      async get(key){
+        const value = localStorage.getItem(prefix + key);
+        return value === null ? null : { value };
+      },
+      async set(key, value){
+        localStorage.setItem(prefix + key, value);
+      }
+    };
+  })();
+
   const REST_BASE = "https://www.okx.com/api/v5";
   const WS_PUBLIC_URL = "wss://ws.okx.com:8443/ws/v5/public";     // tickers
   const WS_BUSINESS_URL = "wss://ws.okx.com:8443/ws/v5/business"; // candle* channels live here in OKX v5
@@ -383,29 +399,29 @@
   };
 
   /* ============================================================
-     PERSISTENCE (window.storage — personal, per-user)
+     PERSISTENCE (localStorage — personal, per-browser)
   ============================================================ */
   async function loadPersisted(){
     try{
-      const wl = await window.storage.get("watchlist", false);
+      const wl = await storage.get("watchlist", false);
       if(wl && wl.value){
         const arr = JSON.parse(wl.value);
         if(Array.isArray(arr) && arr.length) state.watchlist = arr;
       }
     }catch(e){ /* key not found on first run — use default */ }
     try{
-      const al = await window.storage.get("alerts", false);
+      const al = await storage.get("alerts", false);
       if(al && al.value){
         const arr = JSON.parse(al.value);
         if(Array.isArray(arr)) state.alerts = arr;
       }
     }catch(e){ /* no alerts saved yet */ }
     try{
-      const wi = await window.storage.get("watchInterval", false);
+      const wi = await storage.get("watchInterval", false);
       if(wi && wi.value && INTERVALS.includes(wi.value)) state.watchInterval = wi.value;
     }catch(e){ /* not set yet — use default */ }
     try{
-      const an = await window.storage.get("annotations", false);
+      const an = await storage.get("annotations", false);
       if(an && an.value){
         const arr = JSON.parse(an.value);
         if(Array.isArray(arr)) state.annotations = arr;
@@ -414,13 +430,13 @@
     state.selected = state.watchlist[0] || "BTC-USDT";
   }
   async function persistWatchlist(){
-    try{ await window.storage.set("watchlist", JSON.stringify(state.watchlist), false); }catch(e){}
+    try{ await storage.set("watchlist", JSON.stringify(state.watchlist), false); }catch(e){}
   }
   async function persistAlerts(){
-    try{ await window.storage.set("alerts", JSON.stringify(state.alerts), false); }catch(e){}
+    try{ await storage.set("alerts", JSON.stringify(state.alerts), false); }catch(e){}
   }
   async function persistAnnotations(){
-    try{ await window.storage.set("annotations", JSON.stringify(state.annotations), false); }catch(e){}
+    try{ await storage.set("annotations", JSON.stringify(state.annotations), false); }catch(e){}
   }
 
   /* ============================================================
@@ -917,7 +933,7 @@
     if(iv === state.watchInterval) return;
     state.watchInterval = iv;
     renderWatchIntervalSeg();
-    try{ await window.storage.set("watchInterval", iv, false); }catch(e){}
+    try{ await storage.set("watchInterval", iv, false); }catch(e){}
     await Promise.all(state.watchlist.map((s,i)=> new Promise(r=>setTimeout(r, i*150)).then(()=>loadWatchHistory(s))));
     connectWS();
   }
@@ -1042,7 +1058,7 @@
     state.activeTool = null; state.drawTemp = null; state.selectedDrawing = null;
     state.hoverPoint = null; state.hoverSnapPoint = null;
     try{
-      const r = await window.storage.get("drawings:"+state.selected, false);
+      const r = await storage.get("drawings:"+state.selected, false);
       state.drawings = (r && r.value) ? JSON.parse(r.value) : [];
     }catch(e){ state.drawings = []; }
     const cursorBtn = document.querySelector('#toolSeg button[data-tool=""]');
@@ -1795,7 +1811,7 @@
   }
 
   async function persistDrawings(){
-    try{ await window.storage.set("drawings:"+state.selected, JSON.stringify(state.drawings), false); }catch(e){}
+    try{ await storage.set("drawings:"+state.selected, JSON.stringify(state.drawings), false); }catch(e){}
   }
   function addDrawing(d){
     state.drawings.push(d);
