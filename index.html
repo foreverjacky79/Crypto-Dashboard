@@ -37,6 +37,7 @@
   /* ---------- header ---------- */
   header{
     display:flex; align-items:center; gap:16px;
+    flex-wrap:wrap;
     padding: 10px 16px;
     border-bottom: 1px solid var(--border);
     background: var(--panel);
@@ -56,7 +57,7 @@
     100%{ box-shadow:0 0 0 0 rgba(47,212,128,0); }
   }
   .spacer{ flex:1; }
-  .add-symbol{ display:flex; gap:6px; }
+  .add-symbol{ display:flex; gap:6px; min-width:0; }
   input, select, button{
     font-family: var(--font-sans);
     font-size:12px;
@@ -154,6 +155,7 @@
   .tooltip-box .tt-close:hover{ color:var(--down); }
   .tooltip-box .tt-div{ border-top:1px solid var(--border); margin-top:4px; padding-top:4px; }
   #priceChart{ cursor:crosshair; }
+  #priceChart{ touch-action:none; }
   #priceChart.grabbing{ cursor:grabbing; }
   .hint{ font-size:10.5px; color:var(--text-dimmer); }
   .anno-chips{ display:flex; gap:6px; flex-wrap:wrap; }
@@ -192,6 +194,41 @@
     .main-col{ order:1; }
     .col:nth-child(1){ order:2; }
     .col:nth-child(3){ order:3; }
+  }
+  @media (max-width: 640px){
+    header{ gap:8px; padding:8px 10px; }
+    .brand{ width:100%; }
+    .brand .sub{ display:none; }
+    .status{ font-size:10px; }
+    header > .spacer{ display:none; }
+    #notifyBtn{ padding:5px 7px; white-space:nowrap; }
+    .add-symbol{ flex:1; min-width:0; }
+    .add-symbol input{ flex:1; min-width:0; width:0; }
+    .toolbar{
+      gap:8px;
+      padding:7px 10px;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .toolbar::-webkit-scrollbar{ display:none; }
+    .toolbar > *{ flex-shrink:0; }
+    .anno-toolbar{ flex-wrap:wrap; overflow:visible; }
+    .sym-header{ padding:10px 10px 7px; }
+    .sym-title{ gap:7px; }
+    .sym-name{ font-size:16px; }
+    .sym-price{ font-size:18px; }
+    .sym-stats{ gap:10px; }
+    .chart-scroll{ padding:6px 8px 12px; overscroll-behavior:contain; }
+    .seg button{ padding:5px 8px; }
+    .mini-num{ width:52px; }
+  }
+  @media (max-width: 420px){
+    .status{ display:none; }
+    #notifyBtn{ font-size:11px; }
+    .sym-stats .stat:nth-child(3){ display:none; }
   }
 </style>
 </head>
@@ -251,8 +288,8 @@
         <label class="toggle"><input type="checkbox" id="toggleMACD" /><span class="swatch" style="background:#4A9EFF"></span>MACD</label>
         <label class="toggle ema-toggle">
           <input type="checkbox" id="toggleEMA" /><span class="swatch" style="background:#2FE6D0"></span>EMA
-          <span class="ema-period">短<input type="number" id="emaShortInput" class="mini-num" value="12" min="2" max="500" title="EMA短天期" /></span>
-          <span class="ema-period">長<input type="number" id="emaLongInput" class="mini-num" value="26" min="2" max="500" title="EMA長天期" /></span>
+          <span class="ema-period">短<input type="number" id="emaShortInput" class="mini-num" value="5" min="2" max="500" title="EMA短天期" /></span>
+          <span class="ema-period">長<input type="number" id="emaLongInput" class="mini-num" value="30" min="2" max="500" title="EMA長天期" /></span>
         </label>
       </div>
 
@@ -272,6 +309,7 @@
       <div class="toolbar anno-toolbar">
         <span class="hint">邏輯標註：指標較前一根K棒</span>
         <select id="annoIndicator">
+          <option value="ema_cross">EMA 金叉／死叉</option>
           <option value="vol">VOL 成交量</option>
           <option value="kdk">KD - K值</option>
           <option value="kdd">KD - D值</option>
@@ -283,9 +321,13 @@
           <option value="ema_long">EMA(長期)</option>
         </select>
         <input type="number" id="annoEmaPeriod" class="mini-num" min="2" max="500" placeholder="天期" style="display:none;" />
+        <span id="annoEmaCrossFields" class="ema-period" style="display:inline-flex;">
+          快<input type="number" id="annoEmaFast" class="mini-num" value="5" min="2" max="500" title="EMA快線週期" />
+          慢<input type="number" id="annoEmaSlow" class="mini-num" value="30" min="2" max="500" title="EMA慢線週期" />
+        </span>
         <select id="annoOp">
-          <option value=">">增加 ▲</option>
-          <option value="<">減少 ▼</option>
+          <option value="crossUp">金叉 ▲</option>
+          <option value="crossDown">死叉 ▼</option>
         </select>
         <button class="ghost" id="annoAddBtn">＋新增標註</button>
         <div id="annoChips" class="anno-chips"></div>
@@ -395,7 +437,8 @@
     selectedDrawing: null,            // id of a selected drawing (for delete)
     hoverPoint: null,                 // raw mouse pixel pos while a tool is active
     hoverSnapPoint: null,              // snapped pixel pos while a tool is active
-    annotations: []                    // [{id, indicator, op, color}] — logic annotations, global across symbols
+    annotations: [],                   // [{id, indicator, op, color, period}] — logic annotations, global across symbols
+    touch: null                        // touch gesture state for mobile pan/pinch
   };
 
   /* ============================================================
@@ -570,6 +613,7 @@
 
   const ANNO_COLORS = ["#4A9EFF","#2FD480","#FF5C7A","#E8B84B","#C77DFF","#FF9F4A"];
   const ANNO_INDICATORS = {
+    ema_cross: "EMA 金叉／死叉",
     vol:       "VOL 成交量",
     kdk:       "KD - K值",
     kdd:       "KD - D值",
@@ -594,6 +638,7 @@
       case "rsi": return rsi(closesFull,14);
       case "ema_short": return ema(closesFull, period || 12);
       case "ema_long": return ema(closesFull, period || 26);
+      case "ema_cross": return null;
       default: return [];
     }
   }
@@ -1012,8 +1057,15 @@
     state.annotations.forEach(a=>{
       const chip = document.createElement("span");
       chip.className = "anno-chip";
-      const label = (ANNO_INDICATORS[a.indicator]||a.indicator) + (a.period ? `(${a.period})` : "");
-      chip.innerHTML = `<span class="dot2" style="background:${a.color}"></span>${label} ${a.op===">"?"▲增加":"▼減少"}<span class="anno-del" data-id="${a.id}">✕</span>`;
+      let label = ANNO_INDICATORS[a.indicator]||a.indicator;
+      let opLabel = a.op===">" ? "▲增加" : "▼減少";
+      if(a.indicator === "ema_cross"){
+        label += `(${a.fast || 12},${a.slow || 26})`;
+        opLabel = a.op==="crossUp" ? "▲金叉" : "▼死叉";
+      }else if(a.period){
+        label += `(${a.period})`;
+      }
+      chip.innerHTML = `<span class="dot2" style="background:${a.color}"></span>${label} ${opLabel}<span class="anno-del" data-id="${a.id}">✕</span>`;
       chip.querySelector(".anno-del").addEventListener("click", ()=>{
         state.annotations = state.annotations.filter(x=>x.id!==a.id);
         persistAnnotations();
@@ -1315,6 +1367,27 @@
     const { start, count } = geom;
     const end = Math.min(state.candles.length, start+count);
     state.annotations.forEach((rule, ri)=>{
+      if(rule.indicator === "ema_cross"){
+        const fast = Math.max(2, Math.min(500, parseInt(rule.fast,10) || 12));
+        const slow = Math.max(fast + 1, Math.min(500, parseInt(rule.slow,10) || 26));
+        const fastSeries = ema(closesFull, fast);
+        const slowSeries = ema(closesFull, slow);
+        for(let i=Math.max(1,start); i<end; i++){
+          const pf=fastSeries[i-1], ps=slowSeries[i-1], cf=fastSeries[i], cs=slowSeries[i];
+          if([pf,ps,cf,cs].some(v=>v===null || v===undefined)) continue;
+          const crossedUp = pf<=ps && cf>cs;
+          const crossedDown = pf>=ps && cf<cs;
+          const hit = rule.op==="crossUp" ? crossedUp : crossedDown;
+          if(!hit) continue;
+          const localIdx = i-start;
+          const x = geom.padL + xScale(localIdx,count,geom.plotW,0);
+          const candle = state.candles[i];
+          const yHigh = geom.padT + geom.plotH - ((candle.h-geom.lo)/(geom.hi-geom.lo))*geom.plotH;
+          const y = yHigh - 8 - ri*9;
+          drawMarkerTriangle(ctx,x,y,rule.op==="crossUp",rule.color);
+        }
+        return;
+      }
       const series = getIndicatorSeries(rule.indicator, closesFull, rule.period);
       for(let i=Math.max(1,start); i<end; i++){
         const cur = series[i], prev = series[i-1];
@@ -1556,6 +1629,84 @@
       hideTooltip();
       drawAll();
     }, { passive:false });
+
+    // Mobile: one-finger pan and two-finger pinch zoom. Mouse handlers above
+    // remain unchanged for desktop browsers.
+    canvas.addEventListener("touchstart", (e)=>{
+      if(state.activeTool) return;
+      if(e.touches.length===2){
+        const a=e.touches[0], b=e.touches[1];
+        const rect=canvas.getBoundingClientRect();
+        const midX=((a.clientX+b.clientX)/2)-rect.left;
+        const relX=Math.min(Math.max((midX-(state.priceGeom?.padL||0))/(state.priceGeom?.plotW||1),0),1);
+        state.touch={
+          mode:"pinch",
+          startDistance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),
+          startCount:state.view.count,
+          anchorIdx:(state.priceGeom?.start||0)+relX*((state.priceGeom?.count||1)-1),
+          anchorRelX:relX
+        };
+        e.preventDefault();
+        return;
+      }
+      if(e.touches.length!==1) return;
+      const t=e.touches[0], rect=canvas.getBoundingClientRect();
+      state.touch={
+        mode:"pan",
+        startX:t.clientX-rect.left,
+        startY:t.clientY-rect.top,
+        startViewStart:state.view.start,
+        moved:false
+      };
+      e.preventDefault();
+    }, {passive:false});
+
+    canvas.addEventListener("touchmove", (e)=>{
+      if(!state.touch || state.activeTool) return;
+      e.preventDefault();
+      const geom=state.priceGeom;
+      if(!geom) return;
+      if(state.touch.mode==="pinch" && e.touches.length===2){
+        const a=e.touches[0], b=e.touches[1];
+        const distance=Math.max(1,Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY));
+        const n=state.candles.length+FUTURE_PAD;
+        let newCount=Math.round(state.touch.startCount*(state.touch.startDistance/distance));
+        newCount=Math.max(20,Math.min(newCount,n));
+        let newStart=Math.round(state.touch.anchorIdx-state.touch.anchorRelX*(newCount-1));
+        newStart=Math.max(0,Math.min(newStart,n-newCount));
+        state.view.count=newCount;
+        state.view.start=newStart;
+        hideTooltip();
+        drawAll();
+        return;
+      }
+      if(state.touch.mode==="pan" && e.touches.length===1){
+        const t=e.touches[0], rect=canvas.getBoundingClientRect();
+        const x=t.clientX-rect.left;
+        const dx=x-state.touch.startX;
+        if(Math.abs(dx)>6) state.touch.moved=true;
+        const candleWpx=geom.plotW/geom.count;
+        const deltaCandles=Math.round(dx/candleWpx);
+        const n=state.candles.length+FUTURE_PAD;
+        let newStart=state.touch.startViewStart-deltaCandles;
+        newStart=Math.max(0,Math.min(newStart,n-state.view.count));
+        if(newStart!==state.view.start){
+          state.view.start=newStart;
+          hideTooltip();
+          drawAll();
+        }
+      }
+    }, {passive:false});
+
+    canvas.addEventListener("touchend", (e)=>{
+      if(!state.touch) return;
+      if(state.touch.mode==="pan" && !state.touch.moved && e.changedTouches.length){
+        const t=e.changedTouches[0], rect=canvas.getBoundingClientRect();
+        const x=t.clientX-rect.left, y=t.clientY-rect.top;
+        if(x>=0 && y>=0 && x<=rect.width && y<=rect.height) handlePriceClick(x,y);
+      }
+      if(e.touches.length===0) state.touch=null;
+    }, {passive:false});
 
     canvas.addEventListener("mousedown", (e)=>{
       const rect = canvas.getBoundingClientRect();
@@ -1955,24 +2106,43 @@
     document.getElementById("annoIndicator").addEventListener("change", (e)=>{
       const v = e.target.value;
       const p = document.getElementById("annoEmaPeriod");
-      if(v==="ema_short" || v==="ema_long"){
+      const cross = document.getElementById("annoEmaCrossFields");
+      const op = document.getElementById("annoOp");
+      if(v==="ema_cross"){
+        p.style.display = "none";
+        cross.style.display = "inline-flex";
+        op.innerHTML = `<option value="crossUp">金叉 ▲</option><option value="crossDown">死叉 ▼</option>`;
+      }else if(v==="ema_short" || v==="ema_long"){
         p.style.display = "inline-block";
+        cross.style.display = "none";
+        op.innerHTML = `<option value=">">增加 ▲</option><option value="<">減少 ▼</option>`;
         if(!p.value) p.value = v==="ema_short" ? 12 : 26;
       }else{
         p.style.display = "none";
+        cross.style.display = "none";
+        op.innerHTML = `<option value=">">增加 ▲</option><option value="<">減少 ▼</option>`;
       }
     });
     document.getElementById("annoAddBtn").addEventListener("click", ()=>{
       const indicator = document.getElementById("annoIndicator").value;
       const op = document.getElementById("annoOp").value;
       let period = null;
+      let fast = null, slow = null;
+      if(indicator==="ema_cross"){
+        const fastRaw=parseInt(document.getElementById("annoEmaFast").value,10);
+        const slowRaw=parseInt(document.getElementById("annoEmaSlow").value,10);
+        fast=(fastRaw>=2 && fastRaw<=500) ? fastRaw : 12;
+        slow=(slowRaw>=2 && slowRaw<=500 && slowRaw>fast) ? slowRaw : Math.max(fast+1,26);
+        document.getElementById("annoEmaFast").value=fast;
+        document.getElementById("annoEmaSlow").value=slow;
+      }
       if(indicator==="ema_short" || indicator==="ema_long"){
         const raw = parseInt(document.getElementById("annoEmaPeriod").value, 10);
         period = (raw>=2 && raw<=500) ? raw : (indicator==="ema_short" ? 12 : 26);
       }
-      if(state.annotations.some(a=>a.indicator===indicator && a.op===op && a.period===period)) return; // avoid exact duplicate rule
+      if(state.annotations.some(a=>a.indicator===indicator && a.op===op && a.period===period && a.fast===fast && a.slow===slow)) return;
       const color = ANNO_COLORS[state.annotations.length % ANNO_COLORS.length];
-      state.annotations.push({ id: genId(), indicator, op, color, period });
+      state.annotations.push({ id: genId(), indicator, op, color, period, fast, slow });
       persistAnnotations();
       renderAnnoChips();
       drawAll();
