@@ -288,8 +288,8 @@
         <label class="toggle"><input type="checkbox" id="toggleMACD" /><span class="swatch" style="background:#4A9EFF"></span>MACD</label>
         <label class="toggle ema-toggle">
           <input type="checkbox" id="toggleEMA" /><span class="swatch" style="background:#2FE6D0"></span>EMA
-          <span class="ema-period">短<input type="number" id="emaShortInput" class="mini-num" value="12" min="2" max="500" title="EMA短天期" /></span>
-          <span class="ema-period">長<input type="number" id="emaLongInput" class="mini-num" value="26" min="2" max="500" title="EMA長天期" /></span>
+          <span class="ema-period">短<input type="number" id="emaShortInput" class="mini-num" value="5" min="2" max="500" title="EMA短天期" /></span>
+          <span class="ema-period">長<input type="number" id="emaLongInput" class="mini-num" value="30" min="2" max="500" title="EMA長天期" /></span>
         </label>
       </div>
 
@@ -322,8 +322,8 @@
         </select>
         <input type="number" id="annoEmaPeriod" class="mini-num" min="2" max="500" placeholder="天期" style="display:none;" />
         <span id="annoEmaCrossFields" class="ema-period" style="display:inline-flex;">
-          快<input type="number" id="annoEmaFast" class="mini-num" value="12" min="2" max="500" title="EMA快線週期" />
-          慢<input type="number" id="annoEmaSlow" class="mini-num" value="26" min="2" max="500" title="EMA慢線週期" />
+          快<input type="number" id="annoEmaFast" class="mini-num" value="5" min="2" max="500" title="EMA快線週期" />
+          慢<input type="number" id="annoEmaSlow" class="mini-num" value="30" min="2" max="500" title="EMA慢線週期" />
         </span>
         <select id="annoOp">
           <option value="crossUp">金叉 ▲</option>
