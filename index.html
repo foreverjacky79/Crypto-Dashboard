@@ -439,6 +439,18 @@
       }
     }catch(e){ /* none saved yet */ }
     state.selected = state.watchlist[0] || "BTC-USDT";
+    try{
+      const sel = await storage.get("selected", false);
+      if(sel && sel.value && state.watchlist.includes(sel.value)) state.selected = sel.value;
+    }catch(e){ /* not set yet */ }
+    try{
+      const iv = await storage.get("interval", false);
+      if(iv && iv.value && INTERVALS.includes(iv.value)) state.interval = iv.value;
+    }catch(e){ /* not set yet */ }
+  }
+  async function persistSelection(){
+    try{ await storage.set("selected", state.selected, false); }catch(e){}
+    try{ await storage.set("interval", state.interval, false); }catch(e){}
   }
   async function persistWatchlist(){
     try{ await storage.set("watchlist", JSON.stringify(state.watchlist), false); }catch(e){}
@@ -1047,6 +1059,7 @@
   ============================================================ */
   async function selectSymbol(symbol){
     state.selected = symbol;
+    persistSelection();
     renderWatchlistSkeleton();
     renderHeader();
     await loadSelectedHistory();
@@ -1158,6 +1171,7 @@
 
   function setInterval_(iv){
     state.interval = iv;
+    persistSelection();
     renderIntervalSeg();
     loadSelectedHistory();
     connectWS();
