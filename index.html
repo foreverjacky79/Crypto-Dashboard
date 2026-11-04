@@ -306,6 +306,7 @@
         <div class="chart-block" id="priceBlock">
           <canvas id="priceChart" height="360"></canvas>
           <div class="tooltip-box" id="priceTooltip" style="display:none"></div>
+          <div class="lookup-badge" id="lookupBadge" style="display:none">查價模式 · 單指拖曳・雙指縮放 · 再點一下離開</div>
         </div>
         <div class="chart-block"><canvas id="volChart" height="70"></canvas></div>
         <div class="chart-block" id="rsiBlock" style="display:none"><canvas id="rsiChart" height="90"></canvas></div>
@@ -990,17 +991,17 @@
     if(!t){ document.title = "JKCrypto - DashBoard"; return; }
     let diffStr = "";
     const candles = state.candles;
+    const liveCandle = candles.length ? candles[candles.length-1] : null;
+    const high = liveCandle ? liveCandle.h : t.high;
+    const low = liveCandle ? liveCandle.l : t.low;
     if(candles.length >= 2){
       const prevClose = candles[candles.length-2].c; // candle before the currently-forming one
       const diff = t.price - prevClose;
       const pct = prevClose ? (diff/prevClose*100) : 0;
       const arrow = diff >= 0 ? "▲" : "▼";
-      diffStr = ` ${arrow}${fmt2(Math.abs(diff))} `;
+      diffStr = `${arrow}${(Math.abs(diff)).toFixed(1)} (${(high-prevClose).toFixed(1)}, ${(low-prevClose).toFixed(1)})`;
     }
-    const liveCandle = candles.length ? candles[candles.length-1] : null;
-    const high = liveCandle ? liveCandle.h : t.high;
-    const low = liveCandle ? liveCandle.l : t.low;
-    document.title = `${fmtPrice(t.price)}${diffStr} · H:${fmt2(high)} · L:${fmt2(low)} · ${state.selected}`;
+    document.title = `${t.price.toFixed(1)} ${diffStr}, ${high.toFixed(1)} ~ ${low.toFixed(1)}`;
   }
 
   /* ============================================================
@@ -1128,6 +1129,7 @@
     let s = raw.trim().toUpperCase();
     let isSwap = false;
     if(s.endsWith(".P")){ isSwap = true; s = s.slice(0, -2); }
+    else if(s.endsWith("P")){ isSwap = true; s = s.slice(0, -1); }
     else if(s.endsWith("-SWAP")){ isSwap = true; s = s.slice(0, -5); }
     else if(s.endsWith("-PERP")){ isSwap = true; s = s.slice(0, -5); }
     if(s.indexOf("-") === -1){
@@ -1568,10 +1570,20 @@
     if(top + boxH > ch) top = pixelY - boxH - 14;
     box.style.left = Math.max(2,left) + "px";
     box.style.top = Math.max(2,top) + "px";
-    document.getElementById("ttClose").addEventListener("click",(e)=>{ e.stopPropagation(); hideTooltip(); });
+    document.getElementById("ttClose").addEventListener("click",(e)=>{ e.stopPropagation(); hideTooltip(); drawAll(); });
+  }
+
+  function exitLookupMode(){
+    if(!state.lookupMode) return;
+    state.lookupMode = false;
+    const c = document.getElementById("priceChart");
+    if(c) c.classList.remove("lookup");
+    const b = document.getElementById("lookupBadge");
+    if(b) b.style.display = "none";
   }
 
   function hideTooltip(){
+    exitLookupMode();
     state.pinned = null;
     const box = document.getElementById("priceTooltip");
     if(box) box.style.display = "none";
@@ -1674,6 +1686,160 @@
       if(wasPanDrag) return; // it was a pan, not a click
       if(x<0 || y<0 || x>rect.width || y>rect.height) return;
       handlePriceClick(x, y);
+    });
+
+    /* ---- Touch (phone): tap = enter 查價模式, pinch = zoom, drag = pan, tap again = exit ---- */
+    function enterLookupMode(x, y){
+      const geom = state.priceGeom;
+      if(!geom) return;
+      const relX = Math.min(Math.max((x-geom.padL)/geom.plotW, 0), 1);
+      const idx = geom.start + Math.round(relX*(geom.count-1));
+      const candle = state.candles[idx];
+      if(!candle) return;
+      state.lookupMode = true;
+      canvas.classList.add("lookup");
+      document.getElementById("lookupBadge").style.display = "block";
+      const price = priceForY(geom, y);
+      state.pinned = { x, y, idx, price };
+      showTooltip(x, y, idx, candle, price);
+      drawAll();
+    }
+
+    // keep the pinned crosshair/tooltip attached to the same candle + price after pan/zoom
+    function refreshPinned(){
+      const geom = state.priceGeom, p = state.pinned;
+      if(!geom || !p) return;
+      const x = geom.padL + ((p.idx-geom.start)/Math.max(1,geom.count-1))*geom.plotW;
+      const y = Math.min(Math.max(yForPrice(geom, p.price), geom.padT), geom.padT+geom.plotH);
+      p.x = x; p.y = y;
+      const candle = state.candles[p.idx];
+      const box = document.getElementById("priceTooltip");
+      if(candle && x >= geom.padL && x <= geom.padL+geom.plotW){
+        showTooltip(x, y, p.idx, candle, p.price);
+      }else{
+        box.style.display = "none";
+      }
+      drawAll();
+    }
+
+    function touchPos(t){
+      const rect = canvas.getBoundingClientRect();
+      return { x: t.clientX-rect.left, y: t.clientY-rect.top };
+    }
+    function viewChanged(){
+      drawAll();
+      if(state.lookupMode) refreshPinned();
+    }
+
+    canvas.addEventListener("touchstart", (e)=>{
+      if(e.touches.length === 2){
+        state.touch = null;
+        if(!state.lookupMode){ state.pinch = null; return; }
+        e.preventDefault();
+        const geom = state.priceGeom;
+        if(!geom) return;
+        const a = touchPos(e.touches[0]), b = touchPos(e.touches[1]);
+        const midX = (a.x+b.x)/2;
+        const relX = Math.min(Math.max((midX-geom.padL)/geom.plotW, 0), 1);
+        state.pinch = {
+          dist: Math.hypot(a.x-b.x, a.y-b.y) || 1,
+          count: state.view.count,
+          relX,
+          idxCenter: geom.start + relX*(geom.count-1)
+        };
+        return;
+      }
+      if(e.touches.length !== 1) return;
+      state.pinch = null;
+      const { x, y } = touchPos(e.touches[0]);
+      if(!state.activeTool && state.selectedDrawing){
+        const handle = hitTestHandle(x, y);
+        if(handle){
+          e.preventDefault();
+          state.dragHandle = { id: state.selectedDrawing, handle };
+          state.touch = null;
+          return;
+        }
+      }
+      state.touch = { startX:x, startY:y, startViewStart: state.view.start, moved:false };
+    }, { passive:false });
+
+    canvas.addEventListener("touchmove", (e)=>{
+      if(state.dragHandle && e.touches.length === 1){
+        e.preventDefault();
+        const { x, y } = touchPos(e.touches[0]);
+        applyHandleDrag(x, y);
+        return;
+      }
+      if(state.pinch && e.touches.length === 2){
+        e.preventDefault();
+        const geom = state.priceGeom;
+        if(!geom) return;
+        const a = touchPos(e.touches[0]), b = touchPos(e.touches[1]);
+        const dist = Math.hypot(a.x-b.x, a.y-b.y) || 1;
+        const pc = state.pinch;
+        const n = state.candles.length + FUTURE_PAD;
+        let newCount = Math.round(pc.count * (pc.dist/dist));
+        newCount = Math.max(20, Math.min(newCount, n));
+        let newStart = Math.round(pc.idxCenter - pc.relX*(newCount-1));
+        newStart = Math.max(0, Math.min(newStart, n-newCount));
+        if(newCount !== state.view.count || newStart !== state.view.start){
+          state.view.count = newCount; state.view.start = newStart;
+          viewChanged();
+        }
+        return;
+      }
+      if(!state.touch || e.touches.length !== 1) return;
+      const { x, y } = touchPos(e.touches[0]);
+      const dx = x - state.touch.startX, dy = y - state.touch.startY;
+      if(Math.abs(dx) > 8 || Math.abs(dy) > 8) state.touch.moved = true;
+      if(!state.lookupMode) return; // outside lookup mode the page scrolls normally
+      e.preventDefault();
+      const geom = state.priceGeom;
+      if(!geom || !state.touch.moved) return;
+      const deltaCandles = Math.round(dx / (geom.plotW / geom.count));
+      const n = state.candles.length + FUTURE_PAD;
+      let newStart = state.touch.startViewStart - deltaCandles;
+      newStart = Math.max(0, Math.min(newStart, n-state.view.count));
+      if(newStart !== state.view.start){
+        state.view.start = newStart;
+        viewChanged();
+      }
+    }, { passive:false });
+
+    canvas.addEventListener("touchend", (e)=>{
+      if(state.dragHandle){
+        state.dragHandle = null;
+        persistDrawings();
+        if(e.cancelable) e.preventDefault();
+        return;
+      }
+      if(state.pinch){
+        if(e.touches.length < 2){ state.pinch = null; state.touch = null; }
+        if(e.cancelable) e.preventDefault();
+        return;
+      }
+      const tc = state.touch;
+      state.touch = null;
+      if(!tc || tc.moved) return;
+      if(e.cancelable) e.preventDefault(); // stop the emulated mouse click from firing a second time
+      const { startX:x, startY:y } = tc;
+      if(state.activeTool || hitTestDrawing(x, y)){
+        handlePriceClick(x, y);
+        return;
+      }
+      if(state.selectedDrawing){ state.selectedDrawing = null; }
+      if(state.lookupMode){
+        hideTooltip();   // also leaves lookup mode
+        drawAll();
+      }else{
+        enterLookupMode(x, y);
+      }
+    }, { passive:false });
+
+    canvas.addEventListener("touchcancel", ()=>{
+      state.touch = null; state.pinch = null;
+      if(state.dragHandle){ state.dragHandle = null; persistDrawings(); }
     });
   }
 
