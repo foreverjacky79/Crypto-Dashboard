@@ -166,6 +166,13 @@
   .tooltip-box .tt-div{ border-top:1px solid var(--border); margin-top:4px; padding-top:4px; }
   #priceChart{ cursor:crosshair; }
   #priceChart.grabbing{ cursor:grabbing; }
+  #priceChart{ touch-action:pan-y; -webkit-tap-highlight-color:transparent; }
+  #priceChart.lookup{ touch-action:none; box-shadow:inset 0 0 0 1px rgba(74,158,255,0.55); }
+  .lookup-badge{
+    position:absolute; top:6px; left:50%; transform:translateX(-50%);
+    background:rgba(74,158,255,0.92); color:#06121F; font-size:11px; font-weight:600;
+    padding:3px 10px; border-radius:10px; pointer-events:none; white-space:nowrap; z-index:5;
+  }
   .hint{ font-size:10.5px; color:var(--text-dimmer); }
   .anno-chips{ display:flex; gap:6px; flex-wrap:wrap; }
   .anno-chip{
@@ -204,6 +211,67 @@
     .col:nth-child(1){ order:2; }
     .col:nth-child(3){ order:3; }
   }
+
+  /* ---------- 回測分析 ---------- */
+  .bt-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:50; display:none; align-items:center; justify-content:center; }
+  .bt-modal{
+    width:min(1240px,97vw); max-height:96vh; display:flex; flex-direction:column;
+    background:var(--panel); border:1px solid var(--border); border-radius:8px; overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  }
+  .bt-head{ display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .bt-head b{ font-size:14px; white-space:nowrap; }
+  .bt-sub{ color:var(--text-dimmer); font-size:11px; }
+  .bt-body{ display:grid; grid-template-columns:340px minmax(0,1fr); gap:16px; padding:14px; overflow:auto; }
+  .bt-form{ min-width:0; }
+  .bt-sec{ font-weight:600; font-size:12px; margin:14px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .bt-sec:first-child{ margin-top:0; }
+  .bt-mini-sel{ font-size:11px; padding:2px 5px; margin-left:auto; }
+  .bt-field{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; }
+  .bt-field label{ color:var(--text-dim); font-size:12px; white-space:nowrap; }
+  .bt-field input, .bt-field select{ width:170px; color-scheme:dark; }
+  .bt-quick{ display:flex; gap:6px; margin:2px 0 6px; }
+  .bt-quick button{ padding:3px 9px; font-size:11px; }
+  .bt-hint{ color:var(--text-dimmer); font-size:11px; font-weight:400; }
+  .bt-hint.bt-warn{ color:#E8B84B; }
+  .bt-rule{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:8px; padding:6px; background:var(--panel-alt); border:1px solid var(--border); border-radius:5px; }
+  .bt-rule select{ flex:1 1 100%; min-width:0; }
+  .bt-params{ display:flex; flex-wrap:wrap; gap:8px; flex:1; }
+  .bt-params label{ display:inline-flex; align-items:center; gap:4px; color:var(--text-dim); font-size:11px; }
+  .bt-add{ width:100%; border-style:dashed; margin-bottom:8px; }
+  .bt-run{ width:100%; margin-top:14px; padding:9px; font-size:13px; font-weight:600; }
+  .bt-run:disabled{ opacity:0.5; cursor:wait; }
+  .bt-status{ margin-top:8px; font-size:12px; color:var(--text-dim); min-height:16px; }
+  .bt-result{ min-width:0; }
+  .bt-empty{ color:var(--text-dimmer); padding:40px 20px; text-align:center; line-height:1.8; border:1px dashed var(--border); border-radius:6px; }
+  .bt-notes{ color:var(--text-dim); font-size:11px; line-height:1.7; margin-bottom:10px; }
+  .bt-cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; margin-bottom:14px; }
+  .bt-card{ background:var(--panel-alt); border:1px solid var(--border); border-radius:6px; padding:8px 10px; }
+  .bt-card-l{ color:var(--text-dim); font-size:11px; }
+  .bt-card-v{ font-family:var(--font-mono); font-size:16px; font-weight:600; margin-top:2px; }
+  .bt-card-s{ color:var(--text-dimmer); font-size:10px; margin-top:2px; }
+  .bt-up{ color:var(--up); } .bt-down{ color:var(--down); }
+  .bt-chart-title{ font-weight:600; font-size:12px; margin:12px 0 6px; display:flex; align-items:center; gap:10px; }
+  .bt-leg{ font-weight:400; color:var(--text-dim); font-size:11px; }
+  .bt-leg i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin:0 3px 0 8px; vertical-align:-1px; }
+  .bt-chart{ width:100%; border:1px solid var(--border); border-radius:5px; overflow:hidden; }
+  .bt-chart canvas{ display:block; width:100%; touch-action:pan-y; }
+  .bt-table-wrap{ max-height:300px; overflow:auto; border:1px solid var(--border); border-radius:5px; }
+  .bt-table{ border-collapse:collapse; width:100%; font-family:var(--font-mono); font-size:11px; white-space:nowrap; }
+  .bt-table th{ position:sticky; top:0; background:var(--panel-alt); color:var(--text-dim); font-family:var(--font-sans); font-weight:600; text-align:right; padding:6px 8px; }
+  .bt-table td{ text-align:right; padding:5px 8px; border-top:1px solid var(--border); }
+  .bt-table th:nth-child(n+1):nth-child(-n+2), .bt-table td:nth-child(-n+2){ text-align:center; }
+  .bt-tip{
+    position:fixed; z-index:60; pointer-events:none; background:var(--panel-alt); border:1px solid var(--accent);
+    border-radius:6px; padding:6px 9px; font-family:var(--font-mono); font-size:11px; line-height:1.6; white-space:nowrap;
+    box-shadow:0 6px 18px rgba(0,0,0,0.45);
+  }
+  @media (max-width: 860px){
+    .bt-modal{ width:100vw; max-height:100vh; height:100vh; border-radius:0; border:none; }
+    .bt-body{ grid-template-columns:1fr; }
+    .bt-sub{ display:none; }
+    .bt-field input, .bt-field select{ width:150px; }
+  }
 </style>
 </head>
 <body>
@@ -219,6 +287,7 @@
       <span id="statusText">連線中…</span>
     </div>
     <div class="spacer"></div>
+    <button class="primary" id="btOpenBtn" title="用歷史K線回測進出場策略">📊 回測分析</button>
     <button class="ghost" id="notifyBtn" title="啟用瀏覽器通知（點一下以取得授權）">🔔 啟用通知</button>
     <div class="add-symbol">
       <input id="addSymbolInput" placeholder="新增幣種，例如 BTC-USDT" maxlength="20" />
@@ -343,6 +412,60 @@
   </footer>
 
 </div>
+
+<!-- ===== 回測分析 ===== -->
+<div class="bt-overlay" id="btOverlay">
+  <div class="bt-modal" role="dialog" aria-label="回測分析">
+    <div class="bt-head">
+      <b>📊 回測分析</b>
+      <span class="bt-sub">訊號於K棒收盤確認、下一根開盤價成交；僅供研究參考，不代表未來績效</span>
+      <div class="spacer"></div>
+      <button class="ghost" id="btClose" title="關閉（Esc）">✕</button>
+    </div>
+    <div class="bt-body">
+      <div class="bt-form">
+        <div class="bt-sec">標的與區間</div>
+        <div class="bt-field"><label>幣種</label><input id="btSymbol" placeholder="BTC-USDT 或 BTCUSDT.P" maxlength="24" /></div>
+        <div class="bt-field"><label>K線週期</label><select id="btInterval"></select></div>
+        <div class="bt-field"><label>開始日期</label><input type="date" id="btStart" /></div>
+        <div class="bt-field"><label>結束日期</label><input type="date" id="btEnd" /></div>
+        <div class="bt-quick" id="btQuick">
+          <button data-days="7">1週</button><button data-days="30">1月</button><button data-days="90">3月</button>
+          <button data-days="180">6月</button><button data-days="365">1年</button>
+        </div>
+        <div class="bt-hint" id="btRangeHint"></div>
+
+        <div class="bt-sec">資金與成本</div>
+        <div class="bt-field"><label>本金 (USDT)</label><input type="number" id="btCapital" value="10000" min="1" step="any" /></div>
+        <div class="bt-field"><label>每筆動用資金 %</label><input type="number" id="btSize" value="100" min="1" max="100" step="any" /></div>
+        <div class="bt-field"><label>槓桿倍數</label><input type="number" id="btLev" value="1" min="1" max="20" step="any" /></div>
+        <div class="bt-field"><label>手續費 % (單邊)</label><input type="number" id="btFee" value="0.05" min="0" max="5" step="any" /></div>
+        <div class="bt-field"><label>交易方向</label>
+          <select id="btDir"><option value="long">只做多</option><option value="short">只做空</option></select></div>
+
+        <div class="bt-sec">進場條件
+          <select id="btEntryMode" class="bt-mini-sel"><option value="all">全部成立</option><option value="any">任一成立</option></select>
+        </div>
+        <div id="btEntryList"></div>
+        <button class="bt-add" id="btAddEntry">＋ 新增進場條件</button>
+
+        <div class="bt-sec">出場條件 <span class="bt-hint">（任一成立即出場）</span></div>
+        <div id="btExitList"></div>
+        <button class="bt-add" id="btAddExit">＋ 新增出場條件</button>
+        <div class="bt-field"><label>停損 % (0=不用)</label><input type="number" id="btSL" value="0" min="0" step="any" /></div>
+        <div class="bt-field"><label>停利 % (0=不用)</label><input type="number" id="btTP" value="0" min="0" step="any" /></div>
+        <div class="bt-field"><label>最長持有K棒數 (0=不限)</label><input type="number" id="btMaxBars" value="0" min="0" step="1" /></div>
+
+        <button class="primary bt-run" id="btRun">▶ 開始回測</button>
+        <div class="bt-status" id="btStatus"></div>
+      </div>
+      <div class="bt-result" id="btResult">
+        <div class="bt-empty">在左側設定進／出場條件、本金與回測區間，按「開始回測」後，這裡會顯示績效摘要、資金曲線、回撤、進出場標記與交易明細。</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="bt-tip" id="btTip" style="display:none"></div>
 
 <script>
 (function(){
@@ -2200,6 +2323,706 @@
   }
 
   /* ============================================================
+     BACKTEST — 回測分析（引擎）
+     訊號在K棒「收盤」確認，下一根K棒「開盤價」成交（避免偷看未來）。
+     停損/停利以K棒高低價盤中判斷，同一根K棒同時觸及時以停損優先（保守）。
+  ============================================================ */
+  /* BT-ENGINE-START */
+  function btCrossUp(a, b){
+    const out = new Array(a.length).fill(false);
+    for(let i=1;i<a.length;i++){
+      if(a[i]===null||b[i]===null||a[i-1]===null||b[i-1]===null) continue;
+      out[i] = a[i-1] <= b[i-1] && a[i] > b[i];
+    }
+    return out;
+  }
+  function btCmp(a, b, op){
+    const out = new Array(a.length).fill(false);
+    for(let i=0;i<a.length;i++){
+      if(a[i]===null||b[i]===null) continue;
+      out[i] = op==="<" ? a[i] < b[i] : a[i] > b[i];
+    }
+    return out;
+  }
+  function btConst(n, v){ return new Array(n).fill(v); }
+
+  const BT_RULE_DEFS = {
+    ema_up:   { label:"EMA 黃金交叉（短線上穿長線）", p:[["fast","短",12],["slow","長",26]],
+                fn:(d,p)=> btCrossUp(ema(d.c,p.fast), ema(d.c,p.slow)) },
+    ema_down: { label:"EMA 死亡交叉（短線下穿長線）", p:[["fast","短",12],["slow","長",26]],
+                fn:(d,p)=> btCrossUp(ema(d.c,p.slow), ema(d.c,p.fast)) },
+    px_up_ema:   { label:"收盤價上穿 EMA", p:[["n","週期",20]],
+                fn:(d,p)=> btCrossUp(d.c, ema(d.c,p.n)) },
+    px_down_ema: { label:"收盤價下穿 EMA", p:[["n","週期",20]],
+                fn:(d,p)=> btCrossUp(ema(d.c,p.n), d.c) },
+    macd_up:   { label:"MACD 黃金交叉（DIF 上穿 DEA）", p:[["f","快",12],["s","慢",26],["g","訊號",9]],
+                fn:(d,p)=>{ const m=macd(d.c,p.f,p.s,p.g); return btCrossUp(m.macdLine, m.signal); } },
+    macd_down: { label:"MACD 死亡交叉（DIF 下穿 DEA）", p:[["f","快",12],["s","慢",26],["g","訊號",9]],
+                fn:(d,p)=>{ const m=macd(d.c,p.f,p.s,p.g); return btCrossUp(m.signal, m.macdLine); } },
+    rsi_below: { label:"RSI 低於數值", p:[["n","週期",14],["v","數值",30]],
+                fn:(d,p)=> btCmp(rsi(d.c,p.n), btConst(d.c.length,p.v), "<") },
+    rsi_above: { label:"RSI 高於數值", p:[["n","週期",14],["v","數值",70]],
+                fn:(d,p)=> btCmp(rsi(d.c,p.n), btConst(d.c.length,p.v), ">") },
+    rsi_up:    { label:"RSI 上穿數值", p:[["n","週期",14],["v","數值",30]],
+                fn:(d,p)=> btCrossUp(rsi(d.c,p.n), btConst(d.c.length,p.v)) },
+    rsi_down:  { label:"RSI 下穿數值", p:[["n","週期",14],["v","數值",70]],
+                fn:(d,p)=> btCrossUp(btConst(d.c.length,p.v), rsi(d.c,p.n)) },
+    kd_up:     { label:"KD 黃金交叉（K 上穿 D）", p:[["n","週期",9]],
+                fn:(d,p)=>{ const r=kd(d.h,d.l,d.c,p.n,3,3); return btCrossUp(r.k, r.d); } },
+    kd_down:   { label:"KD 死亡交叉（K 下穿 D）", p:[["n","週期",9]],
+                fn:(d,p)=>{ const r=kd(d.h,d.l,d.c,p.n,3,3); return btCrossUp(r.d, r.k); } },
+    boll_low:  { label:"收盤價低於布林下軌", p:[["n","週期",20],["m","倍數",2]],
+                fn:(d,p)=>{ const b=bollinger(d.c,p.n,p.m); return btCmp(d.c, b.lower, "<"); } },
+    boll_high: { label:"收盤價高於布林上軌", p:[["n","週期",20],["m","倍數",2]],
+                fn:(d,p)=>{ const b=bollinger(d.c,p.n,p.m); return btCmp(d.c, b.upper, ">"); } },
+    vol_spike: { label:"成交量大於 N 倍均量", p:[["n","均量週期",20],["m","倍數",2]],
+                fn:(d,p)=>{ const avg=sma(d.v,p.n); return d.v.map((v,i)=> avg[i]!==null && v > p.m*avg[i]); } }
+  };
+
+  function btSignals(list, mode, d, n){
+    if(!list.length) return null;
+    const arrs = list.map(r=> BT_RULE_DEFS[r.type].fn(d, r.params));
+    const out = new Array(n).fill(false);
+    for(let i=0;i<n;i++){
+      out[i] = mode==="any" ? arrs.some(a=>a[i]) : arrs.every(a=>a[i]);
+    }
+    return out;
+  }
+
+  // candles: ascending, includes warm-up bars before cfg.startIdx
+  // cfg: { capital, sizePct, lev, feePct, dir:"long"|"short", entryMode, entry[], exit[], slPct, tpPct, maxBars, startIdx }
+  function runBacktest(candles, cfg){
+    const n = candles.length;
+    const d = {
+      o: candles.map(c=>c.o), h: candles.map(c=>c.h), l: candles.map(c=>c.l),
+      c: candles.map(c=>c.c), v: candles.map(c=>c.v)
+    };
+    const entrySig = btSignals(cfg.entry, cfg.entryMode, d, n);
+    const exitSig = cfg.exit.length ? btSignals(cfg.exit, "any", d, n) : null;
+    const side = cfg.dir === "short" ? -1 : 1;
+    const fee = cfg.feePct/100;
+    const lev = cfg.lev > 0 ? cfg.lev : 1;
+    const startIdx = Math.max(0, cfg.startIdx||0);
+
+    let cash = cfg.capital, pos = null, pendingEntry = false, pendingExit = false;
+    const trades = [], equity = [];
+
+    function closePos(i, price, reason){
+      const gross = pos.side*(price-pos.entry)*pos.qty;
+      const exitFee = price*pos.qty*fee;
+      cash += gross - exitFee;
+      if(cash < 0) cash = 0; // liquidation floor
+      trades.push({
+        side: pos.side, entryIdx: pos.idx, entryT: pos.t, entryPrice: pos.entry,
+        exitIdx: i, exitT: candles[i].t, exitPrice: price, qty: pos.qty,
+        fees: pos.entryFee + exitFee,
+        pnl: gross - pos.entryFee - exitFee,
+        pnlPct: pos.notional ? (gross - pos.entryFee - exitFee)/(pos.notional/lev)*100 : 0,
+        bars: i - pos.idx, reason
+      });
+      pos = null;
+    }
+
+    for(let i=startIdx;i<n;i++){
+      const c = candles[i];
+
+      // 1) pending orders fill at this bar's open
+      if(pendingExit && pos) closePos(i, c.o, "訊號出場");
+      pendingExit = false;
+      if(pendingEntry && !pos && cash > 0){
+        const notional = cash*(cfg.sizePct/100)*lev;
+        const qty = notional / c.o;
+        const f = notional*fee;
+        cash -= f;
+        pos = { side, entry:c.o, qty, idx:i, t:c.t, entryFee:f, notional };
+      }
+      pendingEntry = false;
+
+      // 2) intra-bar stop-loss / take-profit / liquidation / max-hold
+      if(pos){
+        const slP = cfg.slPct > 0 ? pos.entry*(1 - side*cfg.slPct/100) : null;
+        const tpP = cfg.tpPct > 0 ? pos.entry*(1 + side*cfg.tpPct/100) : null;
+        const liqP = lev > 1 ? pos.entry - side*cash/pos.qty : null;
+        const slHit = slP!==null && (side===1 ? c.l <= slP : c.h >= slP);
+        const liqHit = liqP!==null && (side===1 ? c.l <= liqP : c.h >= liqP);
+        const tpHit = tpP!==null && (side===1 ? c.h >= tpP : c.l <= tpP);
+        if(slHit){
+          closePos(i, side===1 ? Math.min(c.o, slP) : Math.max(c.o, slP), "停損");
+        }else if(liqHit){
+          closePos(i, liqP, "爆倉");
+        }else if(tpHit){
+          closePos(i, side===1 ? Math.max(c.o, tpP) : Math.min(c.o, tpP), "停利");
+        }else if(cfg.maxBars > 0 && i - pos.idx >= cfg.maxBars){
+          closePos(i, c.c, "持有逾時");
+        }
+      }
+
+      // 3) mark-to-market equity at close
+      const unreal = pos ? pos.side*(c.c-pos.entry)*pos.qty : 0;
+      equity.push({ t:c.t, eq: cash + unreal });
+
+      // 4) signals confirmed at close → execute next open
+      if(i < n-1){
+        if(pos){ if(exitSig && exitSig[i]) pendingExit = true; }
+        else if(entrySig && entrySig[i] && cash > 0) pendingEntry = true;
+      }
+    }
+    if(pos){
+      closePos(n-1, candles[n-1].c, "期末平倉");
+      equity[equity.length-1].eq = cash;
+    }
+
+    return { trades, equity, stats: btStats(equity, trades, candles, startIdx, cfg) };
+  }
+
+  function btStats(equity, trades, candles, startIdx, cfg){
+    const eq0 = cfg.capital;
+    const eqN = equity.length ? equity[equity.length-1].eq : eq0;
+    // drawdown series (negative %)
+    const dd = []; let peak = -Infinity, maxDD = 0;
+    equity.forEach(p=>{
+      if(p.eq > peak) peak = p.eq;
+      const v = peak > 0 ? (p.eq/peak - 1)*100 : 0;
+      dd.push(v);
+      if(v < maxDD) maxDD = v;
+    });
+    // sharpe on per-bar returns, annualised by bar length
+    const rets = [];
+    for(let k=1;k<equity.length;k++){
+      if(equity[k-1].eq > 0) rets.push(equity[k].eq/equity[k-1].eq - 1);
+    }
+    let sharpe = 0;
+    if(rets.length > 1){
+      const mean = rets.reduce((a,b)=>a+b,0)/rets.length;
+      const sd = Math.sqrt(rets.reduce((a,b)=>a+(b-mean)*(b-mean),0)/(rets.length-1));
+      const ms = (typeof INTERVAL_MS !== "undefined" && INTERVAL_MS[cfg.interval]) || 3600000;
+      const perYear = 365*86400000/ms;
+      sharpe = sd > 0 ? mean/sd*Math.sqrt(perYear) : 0;
+    }
+    const wins = trades.filter(t=>t.pnl > 0), losses = trades.filter(t=>t.pnl <= 0);
+    const grossWin = wins.reduce((a,t)=>a+t.pnl,0);
+    const grossLoss = -losses.reduce((a,t)=>a+t.pnl,0);
+    const first = candles[startIdx], last = candles[candles.length-1];
+    const bh = equity.map((p,k)=> eq0 * candles[startIdx+k].c / first.o);
+    return {
+      initial: eq0, final: eqN,
+      net: eqN - eq0, netPct: (eqN/eq0 - 1)*100,
+      buyHoldPct: (last.c/first.o - 1)*100,
+      maxDD,
+      trades: trades.length,
+      winRate: trades.length ? wins.length/trades.length*100 : 0,
+      profitFactor: grossLoss === 0 ? (grossWin > 0 ? Infinity : 0) : grossWin/grossLoss,
+      avgTrade: trades.length ? trades.reduce((a,t)=>a+t.pnl,0)/trades.length : 0,
+      avgWin: wins.length ? grossWin/wins.length : 0,
+      avgLoss: losses.length ? -grossLoss/losses.length : 0,
+      avgBars: trades.length ? trades.reduce((a,t)=>a+t.bars,0)/trades.length : 0,
+      fees: trades.reduce((a,t)=>a+t.fees,0),
+      sharpe,
+      dd, bh
+    };
+  }
+  /* BT-ENGINE-END */
+
+  /* ============================================================
+     BACKTEST — 回測分析（資料抓取 / 面板 / 圖表）
+  ============================================================ */
+  const BT_MAX_CANDLES = 6000;
+  const BT_WARMUP = 200;
+  const btState = {
+    entry: [{ type:"ema_up",   params:{ fast:12, slow:26 } }],
+    exit:  [{ type:"ema_down", params:{ fast:12, slow:26 } }],
+    cache: null, result: null, running: false, inited: false
+  };
+  const btSleep = ms => new Promise(r=>setTimeout(r, ms));
+  const btMoney = v => (v===undefined||v===null||isNaN(v)) ? "—" : v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const btPct = v => (v>=0?"+":"") + v.toFixed(2) + "%";
+  const btCls = v => v>=0 ? "bt-up" : "bt-down";
+  function btDateStr(d){
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  function btShortDate(ts, withTime){
+    const d = new Date(ts);
+    const s = String(d.getFullYear()).slice(2)+"/"+(d.getMonth()+1)+"/"+d.getDate();
+    return withTime ? s+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0") : s;
+  }
+  function btDefaultParams(type){
+    const o = {}; BT_RULE_DEFS[type].p.forEach(([k,,def])=>{ o[k] = def; }); return o;
+  }
+  const $bt = id => document.getElementById(id);
+
+  /* ---- historical data (OKX history-candles, paginated backwards) ---- */
+  async function btFetchRange(symbol, interval, startMs, endMs, onProgress){
+    const bar = OKX_BAR[interval], ms = INTERVAL_MS[interval];
+    const need = startMs - BT_WARMUP*ms;
+    let after = endMs + ms;
+    const all = [];
+    let truncated = false;
+    for(;;){
+      const url = `${REST_BASE}/market/history-candles?instId=${symbol}&bar=${bar}&limit=100&after=${after}`;
+      let json = null;
+      for(let attempt=0; attempt<4; attempt++){
+        try{
+          const res = await fetch(url);
+          if(res.status === 429){ await btSleep(800*(attempt+1)); continue; }
+          if(!res.ok) throw new Error("HTTP " + res.status);
+          const j = await res.json();
+          if(j.code === "50011"){ await btSleep(800*(attempt+1)); continue; } // rate limited
+          if(j.code !== "0") throw new Error("OKX " + j.code + ": " + j.msg);
+          json = j; break;
+        }catch(e){
+          if(attempt === 3) throw e;
+          await btSleep(600*(attempt+1));
+        }
+      }
+      if(!json) throw new Error("請求過於頻繁，請稍後再試");
+      const rows = json.data || [];
+      if(!rows.length) break;
+      rows.forEach(k=>{
+        if(k[8] === "0") return; // skip the unconfirmed (still forming) candle
+        all.push({ t:+k[0], o:+k[1], h:+k[2], l:+k[3], c:+k[4], v:+k[5] });
+      });
+      const oldest = +rows[rows.length-1][0];
+      if(onProgress) onProgress(all.length, oldest);
+      if(oldest <= need) break;
+      if(all.length >= BT_MAX_CANDLES){ truncated = true; break; }
+      after = oldest;
+      await btSleep(110);
+    }
+    all.sort((a,b)=>a.t-b.t);
+    const seen = new Set();
+    const candles = all.filter(c=>{ if(seen.has(c.t) || c.t > endMs) return false; seen.add(c.t); return true; });
+    return { candles, truncated };
+  }
+
+  /* ---- form <-> config ---- */
+  function btReadConfig(){
+    const symbol = normalizeSymbol($bt("btSymbol").value || "");
+    if(!/^[A-Z0-9]{2,10}-[A-Z0-9]{2,10}(-SWAP)?$/.test(symbol)) throw new Error("幣種格式錯誤，例如 BTC-USDT 或 BTCUSDT.P");
+    const interval = $bt("btInterval").value;
+    const startStr = $bt("btStart").value, endStr = $bt("btEnd").value;
+    if(!startStr || !endStr) throw new Error("請選擇回測起訖日期");
+    const startMs = new Date(startStr+"T00:00:00").getTime();
+    const endMs = new Date(endStr+"T23:59:59").getTime();
+    if(!(endMs > startMs)) throw new Error("結束日期必須晚於開始日期");
+    const num = (id, name, min, max) => {
+      const v = parseFloat($bt(id).value);
+      if(isNaN(v) || v < min || v > max) throw new Error(name + " 需介於 " + min + " ~ " + max);
+      return v;
+    };
+    const cfg = {
+      symbol, interval, startMs, endMs, startStr, endStr,
+      capital: num("btCapital","本金",1,1e9),
+      sizePct: num("btSize","每筆資金比例",1,100),
+      lev: num("btLev","槓桿",1,20),
+      feePct: num("btFee","手續費",0,5),
+      dir: $bt("btDir").value,
+      entryMode: $bt("btEntryMode").value,
+      slPct: num("btSL","停損",0,100),
+      tpPct: num("btTP","停利",0,10000),
+      maxBars: Math.round(num("btMaxBars","最長持有K棒數",0,1e6)),
+      entry: [], exit: []
+    };
+    const clean = (list, label) => list.map(r=>{
+      const p = {};
+      BT_RULE_DEFS[r.type].p.forEach(([k])=>{
+        const v = Number(r.params[k]);
+        if(!isFinite(v) || v <= 0) throw new Error(label + "條件的參數需為大於 0 的數字");
+        p[k] = (k==="v" || k==="m") ? v : Math.max(1, Math.round(v));
+      });
+      return { type:r.type, params:p };
+    });
+    cfg.entry = clean(btState.entry, "進場");
+    cfg.exit = clean(btState.exit, "出場");
+    if(!cfg.entry.length) throw new Error("請至少設定一個進場條件");
+    if(!cfg.exit.length && !cfg.slPct && !cfg.tpPct && !cfg.maxBars){
+      throw new Error("請至少設定一個出場方式（出場條件、停損、停利或最長持有）");
+    }
+    return cfg;
+  }
+
+  function btPersist(cfg){
+    const save = {
+      symbol: cfg.symbol, interval: cfg.interval, start: cfg.startStr, end: cfg.endStr,
+      capital: cfg.capital, sizePct: cfg.sizePct, lev: cfg.lev, feePct: cfg.feePct,
+      dir: cfg.dir, entryMode: cfg.entryMode, slPct: cfg.slPct, tpPct: cfg.tpPct, maxBars: cfg.maxBars,
+      entry: btState.entry, exit: btState.exit
+    };
+    try{ storage.set("btConfig", JSON.stringify(save), false); }catch(e){}
+  }
+
+  async function btRestoreForm(){
+    let saved = null;
+    try{
+      const r = await storage.get("btConfig", false);
+      if(r && r.value) saved = JSON.parse(r.value);
+    }catch(e){}
+    const today = new Date();
+    const setv = (id, v) => { $bt(id).value = v; };
+    if(saved){
+      setv("btSymbol", saved.symbol || state.selected);
+      if(INTERVALS.includes(saved.interval)) setv("btInterval", saved.interval);
+      setv("btStart", saved.start); setv("btEnd", saved.end);
+      setv("btCapital", saved.capital); setv("btSize", saved.sizePct); setv("btLev", saved.lev);
+      setv("btFee", saved.feePct); setv("btDir", saved.dir || "long");
+      setv("btEntryMode", saved.entryMode || "all");
+      setv("btSL", saved.slPct); setv("btTP", saved.tpPct); setv("btMaxBars", saved.maxBars);
+      const ok = l => Array.isArray(l) && l.every(r=>r && BT_RULE_DEFS[r.type] && r.params);
+      if(ok(saved.entry)) btState.entry = saved.entry;
+      if(ok(saved.exit)) btState.exit = saved.exit;
+    }else{
+      setv("btSymbol", state.selected);
+      setv("btInterval", state.interval);
+      const s = new Date(today.getTime() - 30*86400000);
+      setv("btStart", btDateStr(s)); setv("btEnd", btDateStr(today));
+    }
+    btRenderRules("entry"); btRenderRules("exit"); btUpdateHint();
+  }
+
+  function btUpdateHint(){
+    const el = $bt("btRangeHint");
+    const s = $bt("btStart").value, e = $bt("btEnd").value, iv = $bt("btInterval").value;
+    if(!s || !e){ el.textContent = ""; return; }
+    const days = (new Date(e+"T23:59:59") - new Date(s+"T00:00:00"))/86400000;
+    const est = Math.round(days*86400000/INTERVAL_MS[iv]) + BT_WARMUP;
+    el.textContent = "預估約 " + est.toLocaleString() + " 根K棒（含暖機）";
+    el.className = "bt-hint" + (est > BT_MAX_CANDLES ? " bt-warn" : "");
+    if(est > BT_MAX_CANDLES) el.textContent += "，超過上限 " + BT_MAX_CANDLES.toLocaleString() + " 根，將只取最近的資料";
+  }
+
+  /* ---- rule rows ---- */
+  function btRenderRules(kind){
+    const list = btState[kind];
+    const box = $bt(kind==="entry" ? "btEntryList" : "btExitList");
+    box.innerHTML = "";
+    if(!list.length){ box.innerHTML = '<div class="bt-hint">（未設定）</div>'; return; }
+    list.forEach((r, idx)=>{
+      const def = BT_RULE_DEFS[r.type];
+      const row = document.createElement("div"); row.className = "bt-rule";
+      const sel = document.createElement("select");
+      Object.keys(BT_RULE_DEFS).forEach(k=>{
+        const o = document.createElement("option");
+        o.value = k; o.textContent = BT_RULE_DEFS[k].label; if(k===r.type) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", ()=>{ r.type = sel.value; r.params = btDefaultParams(r.type); btRenderRules(kind); });
+      const params = document.createElement("div"); params.className = "bt-params";
+      def.p.forEach(([k, label])=>{
+        const lab = document.createElement("label"); lab.textContent = label;
+        const inp = document.createElement("input");
+        inp.type = "number"; inp.className = "mini-num"; inp.step = "any"; inp.min = "0";
+        inp.value = r.params[k] !== undefined ? r.params[k] : "";
+        inp.addEventListener("input", ()=>{ const v = parseFloat(inp.value); if(!isNaN(v)) r.params[k] = v; });
+        lab.appendChild(inp); params.appendChild(lab);
+      });
+      const del = document.createElement("button");
+      del.className = "ghost"; del.textContent = "✕"; del.title = "移除此條件";
+      del.addEventListener("click", ()=>{ list.splice(idx, 1); btRenderRules(kind); });
+      row.appendChild(sel); row.appendChild(params); row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+
+  /* ---- run ---- */
+  async function btRun(){
+    if(btState.running) return;
+    const status = $bt("btStatus"), runBtn = $bt("btRun");
+    let cfg;
+    try{ cfg = btReadConfig(); }catch(e){ status.textContent = "⚠ " + e.message; status.className = "bt-status bt-down"; return; }
+    btState.running = true; runBtn.disabled = true;
+    status.className = "bt-status"; status.textContent = "準備抓取歷史資料…";
+    try{
+      const key = [cfg.symbol, cfg.interval, cfg.startMs, cfg.endMs].join("|");
+      let data;
+      if(btState.cache && btState.cache.key === key){
+        data = btState.cache.data;
+      }else{
+        data = await btFetchRange(cfg.symbol, cfg.interval, cfg.startMs, cfg.endMs, (cnt, oldest)=>{
+          status.textContent = "抓取歷史資料… 已取得 " + cnt.toLocaleString() + " 根（至 " + btShortDate(oldest, cfg.interval!=="1d") + "）";
+        });
+        btState.cache = { key, data };
+      }
+      const candles = data.candles;
+      let startIdx = candles.findIndex(c=>c.t >= cfg.startMs);
+      if(startIdx < 0) throw new Error("此區間沒有可用資料");
+      if(candles.length > 0 && candles[0].t > cfg.startMs - BT_WARMUP*INTERVAL_MS[cfg.interval]){
+        startIdx = Math.max(startIdx, Math.min(60, candles.length >> 2)); // history ran out: shorter warm-up
+      }
+      if(candles.length - startIdx < 30) throw new Error("可用K棒不足 30 根，請放寬日期區間或改用較小週期");
+      status.textContent = "計算回測中…";
+      await btSleep(20);
+      const res = runBacktest(candles, { ...cfg, startIdx });
+      btState.result = { cfg, candles, startIdx, truncated: data.truncated, res };
+      btPersist(cfg);
+      btRenderResult();
+      status.className = "bt-status";
+      status.textContent = "完成：" + res.trades.length + " 筆交易";
+      if(window.innerWidth <= 860) $bt("btResult").scrollIntoView({ behavior:"smooth", block:"start" }); // phone: jump to results
+    }catch(e){
+      status.className = "bt-status bt-down";
+      status.textContent = "⚠ 回測失敗：" + e.message;
+    }
+    btState.running = false; runBtn.disabled = false;
+  }
+
+  /* ---- result rendering ---- */
+  function btCard(label, value, cls, sub){
+    return `<div class="bt-card"><div class="bt-card-l">${label}</div><div class="bt-card-v ${cls||""}">${value}</div>${sub?`<div class="bt-card-s">${sub}</div>`:""}</div>`;
+  }
+
+  function btRenderResult(){
+    const R = btState.result; if(!R) return;
+    const { cfg, candles, startIdx, res } = R;
+    const st = res.stats;
+    const first = candles[startIdx], last = candles[candles.length-1];
+    const intraday = cfg.interval !== "1d";
+    const pf = st.profitFactor === Infinity ? "∞" : st.profitFactor.toFixed(2);
+    const notes = [];
+    notes.push(`${cfg.symbol} · ${cfg.interval} · ${cfg.dir==="short"?"做空":"做多"} · ${btShortDate(first.t, intraday)} ~ ${btShortDate(last.t, intraday)} · ${(candles.length-startIdx).toLocaleString()} 根K棒`);
+    if(R.truncated) notes.push("⚠ 資料量達上限，區間較早的部分已被捨棄，實際起點為 " + btShortDate(first.t, intraday));
+    if(cfg.lev > 1) notes.push("使用 " + cfg.lev + "x 槓桿：虧損超過本金時以爆倉計算（簡化模型，未計資金費率與維持保證金）");
+
+    $bt("btResult").innerHTML = `
+      <div class="bt-notes">${notes.map(n=>`<div>${n}</div>`).join("")}</div>
+      <div class="bt-cards">
+        ${btCard("最終資金", btMoney(st.final), btCls(st.net), "本金 "+btMoney(st.initial))}
+        ${btCard("淨損益", (st.net>=0?"+":"")+btMoney(st.net), btCls(st.net), btPct(st.netPct))}
+        ${btCard("買進持有報酬", btPct(st.buyHoldPct), btCls(st.buyHoldPct), "同區間不動作")}
+        ${btCard("最大回撤", st.maxDD.toFixed(2)+"%", "bt-down")}
+        ${btCard("交易次數", st.trades, "", "平均持有 "+st.avgBars.toFixed(1)+" 根")}
+        ${btCard("勝率", st.winRate.toFixed(1)+"%", "")}
+        ${btCard("獲利因子", pf, "", "總獲利 ÷ 總虧損")}
+        ${btCard("平均每筆損益", (st.avgTrade>=0?"+":"")+btMoney(st.avgTrade), btCls(st.avgTrade), "賺 "+btMoney(st.avgWin)+" / 賠 "+btMoney(st.avgLoss))}
+        ${btCard("夏普值（年化）", st.sharpe.toFixed(2), "")}
+        ${btCard("手續費合計", btMoney(st.fees), "")}
+      </div>
+      <div class="bt-chart-title">資金曲線 <span class="bt-leg"><i style="background:#4A9EFF"></i>策略 <i style="background:#7A8394"></i>買進持有</span></div>
+      <div class="bt-chart"><canvas id="btEquity"></canvas></div>
+      <div class="bt-chart-title">回撤</div>
+      <div class="bt-chart"><canvas id="btDD"></canvas></div>
+      <div class="bt-chart-title">價格與進出場點 <span class="bt-leg"><i style="background:#4A9EFF"></i>進場 <i style="background:#2FD480"></i>獲利出場 <i style="background:#FF5C7A"></i>虧損出場</span></div>
+      <div class="bt-chart"><canvas id="btPrice"></canvas></div>
+      <div class="bt-chart-title">交易明細 <button class="ghost" id="btCsv">下載 CSV</button></div>
+      <div class="bt-table-wrap">${btTradeTable(res.trades, cfg)}</div>`;
+    btDrawCharts();
+    const csv = $bt("btCsv"); if(csv) csv.addEventListener("click", btExportCsv);
+  }
+
+  function btTradeTable(trades, cfg){
+    if(!trades.length) return '<div class="bt-hint" style="padding:10px">此區間沒有觸發任何交易，請調整進場條件或拉長日期區間。</div>';
+    const intraday = cfg.interval !== "1d";
+    const rows = trades.map((t,i)=>`
+      <tr>
+        <td>${i+1}</td><td>${t.side===1?"多":"空"}</td>
+        <td>${btShortDate(t.entryT, intraday)}</td><td>${btMoney(t.entryPrice)}</td>
+        <td>${btShortDate(t.exitT, intraday)}</td><td>${btMoney(t.exitPrice)}</td>
+        <td class="${btCls(t.pnl)}">${(t.pnl>=0?"+":"")+btMoney(t.pnl)}</td>
+        <td class="${btCls(t.pnl)}">${btPct(t.pnlPct)}</td>
+        <td>${t.bars}</td><td>${t.reason}</td>
+      </tr>`).join("");
+    return `<table class="bt-table"><thead><tr><th>#</th><th>方向</th><th>進場時間</th><th>進場價</th><th>出場時間</th><th>出場價</th><th>損益</th><th>報酬(對保證金)</th><th>持有K數</th><th>出場原因</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function btExportCsv(){
+    const R = btState.result; if(!R) return;
+    const head = ["#","方向","進場時間","進場價","出場時間","出場價","數量","損益","報酬%","手續費","持有K數","出場原因"];
+    const lines = [head.join(",")];
+    R.res.trades.forEach((t,i)=>{
+      lines.push([i+1, t.side===1?"多":"空", new Date(t.entryT).toISOString(), t.entryPrice, new Date(t.exitT).toISOString(),
+        t.exitPrice, t.qty, t.pnl.toFixed(4), t.pnlPct.toFixed(4), t.fees.toFixed(4), t.bars, t.reason].join(","));
+    });
+    const blob = new Blob(["﻿"+lines.join("\n")], { type:"text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "backtest_" + R.cfg.symbol + "_" + R.cfg.interval + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ---- charts ---- */
+  function btChart(canvas, cssH, times, series, opt){
+    opt = opt || {};
+    const { ctx, w, h } = setupCanvas(canvas, cssH);
+    const padL = 8, padR = 72, padT = 10, padB = 20;
+    const plotW = w-padL-padR, plotH = h-padT-padB;
+    const n = times.length;
+    let lo = Infinity, hi = -Infinity;
+    series.forEach(s=> s.data.forEach(v=>{ if(v===null||v===undefined) return; if(v<lo) lo=v; if(v>hi) hi=v; }));
+    if(opt.min !== undefined) lo = Math.min(lo, opt.min);
+    if(opt.max !== undefined) hi = Math.max(hi, opt.max);
+    if(!isFinite(lo) || lo === hi){ lo = (isFinite(lo)?lo:0) - 1; hi = (isFinite(hi)?hi:0) + 1; }
+    const pad = (hi-lo)*0.06;
+    if(!opt.fixLo) lo -= pad;
+    if(!opt.fixHi) hi += pad;
+    const X = i => padL + (n<=1 ? 0 : i/(n-1))*plotW;
+    const Y = v => padT + (1-(v-lo)/(hi-lo))*plotH;
+    ctx.fillStyle = "#0F131B"; ctx.fillRect(0,0,w,h);
+    ctx.font = "10px " + getComputedStyle(document.body).getPropertyValue("--font-mono");
+    ctx.lineWidth = 1;
+    for(let g=0; g<=4; g++){
+      const v = lo + (hi-lo)*g/4, y = Y(v);
+      ctx.strokeStyle = "#1E2530"; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke();
+      ctx.fillStyle = "#7A8394"; ctx.fillText(opt.fmt ? opt.fmt(v) : v.toFixed(2), w-padR+6, y+3);
+    }
+    const intraday = opt.intraday;
+    for(let g=0; g<=4; g++){
+      const i = Math.round((n-1)*g/4);
+      ctx.fillStyle = "#454C5A";
+      ctx.textAlign = g===0 ? "left" : (g===4 ? "right" : "center");
+      ctx.fillText(btShortDate(times[i], intraday), X(i), h-6);
+    }
+    ctx.textAlign = "left";
+    if(opt.zero !== undefined && opt.zero > lo && opt.zero < hi){
+      ctx.strokeStyle = "#454C5A"; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(padL,Y(opt.zero)); ctx.lineTo(w-padR,Y(opt.zero)); ctx.stroke(); ctx.setLineDash([]);
+    }
+    series.forEach(s=>{
+      if(s.hidden) return;
+      ctx.beginPath();
+      let started = false;
+      s.data.forEach((v,i)=>{ if(v===null) return; const x=X(i), y=Y(v); if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y); });
+      if(s.fill){
+        const base = Y(opt.base !== undefined ? opt.base : lo);
+        ctx.lineTo(X(n-1), base); ctx.lineTo(X(0), base); ctx.closePath();
+        ctx.fillStyle = s.fill; ctx.fill();
+        ctx.beginPath(); started = false;
+        s.data.forEach((v,i)=>{ if(v===null) return; const x=X(i), y=Y(v); if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y); });
+      }
+      ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 1.4; ctx.stroke();
+    });
+    if(opt.after) opt.after(ctx, { X, Y, n, w, h, padL, padT, plotW, plotH });
+    canvas._geom = { padL, plotW, n };
+  }
+
+  function btTriangle(ctx, x, y, up, color, size){
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    if(up){ ctx.moveTo(x, y-size); ctx.lineTo(x+size, y+size*0.8); ctx.lineTo(x-size, y+size*0.8); }
+    else  { ctx.moveTo(x, y+size); ctx.lineTo(x+size, y-size*0.8); ctx.lineTo(x-size, y-size*0.8); }
+    ctx.closePath(); ctx.fill();
+  }
+
+  function btAttachHover(canvas, textFn){
+    const tip = $bt("btTip");
+    function move(e){
+      const g = canvas._geom; if(!g) return;
+      const rect = canvas.getBoundingClientRect();
+      const idx = Math.round((e.clientX-rect.left-g.padL)/g.plotW*(g.n-1));
+      if(idx < 0 || idx >= g.n){ tip.style.display = "none"; return; }
+      tip.innerHTML = textFn(idx);
+      tip.style.display = "block";
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      let left = e.clientX+14, top = e.clientY+14;
+      if(left+tw > window.innerWidth-4) left = e.clientX-tw-14;
+      if(top+th > window.innerHeight-4) top = e.clientY-th-14;
+      tip.style.left = Math.max(4,left)+"px"; tip.style.top = Math.max(4,top)+"px";
+    }
+    canvas.addEventListener("pointermove", move);
+    canvas.addEventListener("pointerdown", move);
+    canvas.addEventListener("pointerleave", ()=>{ tip.style.display = "none"; });
+  }
+
+  function btDrawCharts(){
+    const R = btState.result; if(!R) return;
+    const { cfg, candles, startIdx, res } = R;
+    const st = res.stats;
+    const seg = candles.slice(startIdx);
+    const times = res.equity.map(p=>p.t);
+    const intraday = cfg.interval !== "1d";
+    const eq = res.equity.map(p=>p.eq);
+
+    const cEq = $bt("btEquity");
+    btChart(cEq, 220, times, [
+      { data: st.bh, color:"#7A8394", width:1.2 },
+      { data: eq, color:"#4A9EFF", width:1.6 }
+    ], { fmt:btMoney, zero:cfg.capital, intraday });
+    btAttachHover(cEq, i=>`${btShortDate(times[i], true)}<br/>策略 <b>${btMoney(eq[i])}</b><br/>買進持有 <b>${btMoney(st.bh[i])}</b>`);
+
+    const cDD = $bt("btDD");
+    btChart(cDD, 90, times, [{ data: st.dd, color:"#FF5C7A", fill:"rgba(255,92,122,0.25)", width:1.2 }],
+      { fmt:v=>v.toFixed(st.maxDD > -1 ? 2 : 1)+"%", fixHi:true, max:0, base:0, intraday });
+    btAttachHover(cDD, i=>`${btShortDate(times[i], true)}<br/>回撤 <b>${st.dd[i].toFixed(2)}%</b>`);
+
+    const cPx = $bt("btPrice");
+    const useCandles = seg.length <= 300;
+    const series = useCandles
+      ? [{ data: seg.map(c=>c.h), hidden:true }, { data: seg.map(c=>c.l), hidden:true }]
+      : [{ data: seg.map(c=>c.c), color:"#9AA3B2", width:1.2 }];
+    btChart(cPx, 260, seg.map(c=>c.t), series, { fmt:fmtPrice, intraday, after:(ctx, g)=>{
+      if(useCandles){
+        const bw = Math.max(1, g.plotW/seg.length*0.6);
+        seg.forEach((c,i)=>{
+          const x = g.X(i), col = c.c >= c.o ? "#2FD480" : "#FF5C7A";
+          ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(x, g.Y(c.h)); ctx.lineTo(x, g.Y(c.l)); ctx.stroke();
+          const y1 = g.Y(Math.max(c.o,c.c)), y2 = g.Y(Math.min(c.o,c.c));
+          ctx.fillRect(x-bw/2, y1, bw, Math.max(1, y2-y1));
+        });
+      }
+      res.trades.forEach(t=>{
+        const i1 = t.entryIdx - startIdx, i2 = t.exitIdx - startIdx;
+        if(i1 < 0 || i2 < 0) return;
+        const win = t.pnl > 0, col = win ? "#2FD480" : "#FF5C7A";
+        ctx.strokeStyle = col; ctx.globalAlpha = 0.7; ctx.setLineDash([3,3]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(g.X(i1), g.Y(t.entryPrice)); ctx.lineTo(g.X(i2), g.Y(t.exitPrice)); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha = 1;
+        btTriangle(ctx, g.X(i1), g.Y(t.entryPrice), t.side===1, "#4A9EFF", 5);
+        btTriangle(ctx, g.X(i2), g.Y(t.exitPrice), t.side!==1, col, 5);
+      });
+    }});
+    btAttachHover(cPx, i=>{
+      const c = seg[i];
+      return `${btShortDate(c.t, true)}<br/>開 <b>${fmtPrice(c.o)}</b> 高 <b>${fmtPrice(c.h)}</b><br/>低 <b>${fmtPrice(c.l)}</b> 收 <b>${fmtPrice(c.c)}</b>`;
+    });
+  }
+
+  /* ---- modal wiring ---- */
+  function btOpen(){
+    $bt("btOverlay").style.display = "flex";
+    document.body.style.overflow = "hidden";
+    if(!btState.inited){
+      btState.inited = true;
+      const sel = $bt("btInterval");
+      INTERVALS.forEach(iv=>{ const o=document.createElement("option"); o.value=iv; o.textContent=iv; sel.appendChild(o); });
+      btRestoreForm();
+    }else if(btState.result){
+      btDrawCharts(); // canvases were sized while hidden / window may have resized
+    }
+  }
+  function btClose(){
+    $bt("btOverlay").style.display = "none";
+    $bt("btTip").style.display = "none";
+    document.body.style.overflow = "";
+  }
+
+  function btInit(){
+    $bt("btOpenBtn").addEventListener("click", btOpen);
+    $bt("btClose").addEventListener("click", btClose);
+    $bt("btOverlay").addEventListener("mousedown", e=>{ if(e.target === $bt("btOverlay")) btClose(); });
+    document.addEventListener("keydown", e=>{ if(e.key === "Escape" && $bt("btOverlay").style.display === "flex") btClose(); });
+    $bt("btRun").addEventListener("click", btRun);
+    $bt("btAddEntry").addEventListener("click", ()=>{
+      btState.entry.push({ type:"rsi_below", params: btDefaultParams("rsi_below") }); btRenderRules("entry");
+    });
+    $bt("btAddExit").addEventListener("click", ()=>{
+      btState.exit.push({ type:"rsi_above", params: btDefaultParams("rsi_above") }); btRenderRules("exit");
+    });
+    ["btStart","btEnd","btInterval"].forEach(id=> $bt(id).addEventListener("change", btUpdateHint));
+    document.querySelectorAll("#btQuick button").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        const end = $bt("btEnd").value ? new Date($bt("btEnd").value+"T00:00:00") : new Date();
+        const start = new Date(end.getTime() - (+b.dataset.days)*86400000);
+        $bt("btStart").value = btDateStr(start); $bt("btEnd").value = btDateStr(end);
+        btUpdateHint();
+      });
+    });
+    let rt = null;
+    window.addEventListener("resize", ()=>{
+      clearTimeout(rt);
+      rt = setTimeout(()=>{ if($bt("btOverlay").style.display === "flex" && btState.result) btDrawCharts(); }, 150);
+    });
+  }
+
+  /* ============================================================
      BOOT
   ============================================================ */
   async function boot(){
@@ -2211,6 +3034,7 @@
     renderAlerts();
     renderAnnoChips();
     wireStatic();
+    btInit();
     wirePriceChartInteractions();
     await loadSelectedHistory();
     Promise.all(state.watchlist.map((s,i)=> new Promise(r=>setTimeout(r, i*150)).then(()=>loadWatchHistory(s))));
